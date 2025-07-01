@@ -1,0 +1,143 @@
+<table border="0" align="center" width="100%" cellpadding="2" cellspacing="0" style="border:1px solid #CCCCCC;">
+                                           <tr>
+                                            <td colspan="6" class="dados" align="center" style="border-bottom: #cccccc solid 1px;" ><b>Relatório de Agendamento de Consultas</b></td>
+                                           </tr>
+                                           <tr>
+                                            <td class="dados" width="20%"><b>Tipo</b><br> Consulta</td>
+                                            <td class="dados" width="20%"><b>Tipo Marcação</b><br> Todos</td>
+                                            <td class="dados" width="20%"><b>Tipo Consulta</b><br> Consultas médicas</td>
+                                            <td class="dados" width="20%"><b>Unidade Executante</b><br>AME CARAGUATATUBA</td>
+                                            
+                                            <td class="dados" width="20%"><b>Especialidade</b><br> Todas especialidades</td>
+                                            <td class="dados" width="20%"><b>Período:</b> <br>Junho  de  2025</td>
+                                           </tr>
+                                          </table><br><table width="50%" cellspacing="0" cellpadding="3" border="1" align="left" style="border-collapse:collapse;">
+                                                    <tr class="titulo relatorio" style="color: #FFFFFF;background-color: #999999;">
+                                                        <td class="titulo relatorio" id="tit_primeira"  rowspan="2" >  Especialidade</td>
+                                                        <td class="titulo relatorio" id="tit" align="center"  rowspan="2"  >Oferta</td>
+                                                        <td class="titulo relatorio" id="tit" align="center"  >Agendado</td>
+                                                        <td class="titulo relatorio" id="tit" align="center"  rowspan="2" >Realizado</td></tr><tr class="titulo relatorio" style="color: #FFFFFF;background-color: #999999;"></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1830">0901010014 OCI AVAL DIAG INICIAL CÂNCER MAMA</td>
+                                                  <td align="center" class="dados">75 </td> <td align="center" class="dados">39 </td> <td align="center" class="dados">34 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1833">0901010049 OCI PROGRESSÃO AVAL DIAG CÂNCER PROSTATA</td>
+                                                  <td align="center" class="dados">16 </td> <td align="center" class="dados">10 </td> <td align="center" class="dados">6 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1837">0901010073 OCI AVAL DIAG CÂNCER GASTRICO</td>
+                                                  <td align="center" class="dados">24 </td> <td align="center" class="dados">3 </td> <td align="center" class="dados">3 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1838">0901010081 OCI AVAL DIAG CÂNCER COLORRETAL</td>
+                                                  <td align="center" class="dados">26 </td> <td align="center" class="dados">18 </td> <td align="center" class="dados">14 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1831">0901010090 OCI PROGRESSÃO AVAL DIAG CÂNCER MAMA I</td>
+                                                  <td align="center" class="dados">15 </td> <td align="center" class="dados">3 </td> <td align="center" class="dados">3 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1839">0902010018 OCI AVAL RISCO CIRURGICO</td>
+                                                  <td align="center" class="dados">26 </td> <td align="center" class="dados">1 </td> <td align="center" class="dados">1 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1840">0902010026 OCI AVAL CARDIOLÓGICA</td>
+                                                  <td align="center" class="dados">41 </td> <td align="center" class="dados">41 </td> <td align="center" class="dados">30 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1841">0902010034 OCI AVAL DIAG INICIAL SINDROME CORON CRÔNICA</td>
+                                                  <td align="center" class="dados">25 </td> <td align="center" class="dados">25 </td> <td align="center" class="dados">19 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1844">0902010069 OCI AVAL DIAG INSUFICIÊNCIA CARDÍACA</td>
+                                                  <td align="center" class="dados">20 </td> <td align="center" class="dados">20 </td> <td align="center" class="dados">19 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1845">0903010011 OCI AVAL DIAG ORTOPEDIA REC RADIOLOGIA</td>
+                                                  <td align="center" class="dados">69 </td> <td align="center" class="dados">68 </td> <td align="center" class="dados">40 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1846">0903010020 OCI AVAL DIAG ORTOPEDIA REC RADIOLOGIA E USG</td>
+                                                  <td align="center" class="dados">30 </td> <td align="center" class="dados">28 </td> <td align="center" class="dados">19 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1847">0903010038 OCI AVAL DIAG ORTOPEDIA REC RADIOLOGIA E TC</td>
+                                                  <td align="center" class="dados">33 </td> <td align="center" class="dados">33 </td> <td align="center" class="dados">25 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1850">0904010015 OCI AVAL INCIAL DIAG DEFICIT AUDITIVO</td>
+                                                  <td align="center" class="dados">26 </td> <td align="center" class="dados">27 </td> <td align="center" class="dados">21 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1851">0904010023 OCI PROGRESSÃO AVAL DIAG DÉFICIT AUDITIVO</td>
+                                                  <td align="center" class="dados">10 </td> <td align="center" class="dados">6 </td> <td align="center" class="dados">4 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1853">0905010019 OCI AVAL INICIAL OFTALMOLOGIA 0 A 8 ANOS</td>
+                                                  <td align="center" class="dados">16 </td> <td align="center" class="dados">15 </td> <td align="center" class="dados">6 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1855">0905010035 OCI AVAL INICIAL OFTALMOLOGIA A PARTIR DE 9 ANOS</td>
+                                                  <td align="center" class="dados">455 </td> <td align="center" class="dados">448 </td> <td align="center" class="dados">277 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="140">ANESTESIOLOGIA - AVALIAÇÃO PRÉ-CIRÚRGICA</td>
+                                                  <td align="center" class="dados">1379 </td> <td align="center" class="dados">1323 </td> <td align="center" class="dados">1196 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="4">CARDIOLOGIA</td>
+                                                  <td align="center" class="dados">1127 </td> <td align="center" class="dados">1235 </td> <td align="center" class="dados">1126 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="884">CARDIOLOGIA - SAUDE DO HOMEM</td>
+                                                  <td align="center" class="dados">90 </td> <td align="center" class="dados">69 </td> <td align="center" class="dados">68 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="36">CIRURGIA GERAL</td>
+                                                  <td align="center" class="dados">271 </td> <td align="center" class="dados">284 </td> <td align="center" class="dados">235 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="242">CIRURGIA GERAL - PÓS OPERATÓRIO</td>
+                                                  <td align="center" class="dados">48 </td> <td align="center" class="dados">80 </td> <td align="center" class="dados">72 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="61">CIRURGIA PEDIÁTRICA</td>
+                                                  <td align="center" class="dados">131 </td> <td align="center" class="dados">108 </td> <td align="center" class="dados">83 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="368">CIRURGIA PEDIÁTRICA - PÓS OPERATÓRIO</td>
+                                                  <td align="center" class="dados">40 </td> <td align="center" class="dados">42 </td> <td align="center" class="dados">28 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="7">CIRURGIA PLÁSTICA</td>
+                                                  <td align="center" class="dados">545 </td> <td align="center" class="dados">578 </td> <td align="center" class="dados">474 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="245">CIRURGIA PLÁSTICA - PÓS OPERATÓRIO</td>
+                                                  <td align="center" class="dados">110 </td> <td align="center" class="dados">134 </td> <td align="center" class="dados">103 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="173">CIRURGIA PLÁSTICA - TUMOR PELE E OUTROS</td>
+                                                  <td align="center" class="dados">60 </td> <td align="center" class="dados">30 </td> <td align="center" class="dados">26 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="6">CIRURGIA VASCULAR</td>
+                                                  <td align="center" class="dados">455 </td> <td align="center" class="dados">511 </td> <td align="center" class="dados">404 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="237">CIRURGIA VASCULAR - PÓS OPERATÓRIO</td>
+                                                  <td align="center" class="dados">50 </td> <td align="center" class="dados">44 </td> <td align="center" class="dados">39 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="65">COLOPROCTOLOGIA</td>
+                                                  <td align="center" class="dados">197 </td> <td align="center" class="dados">205 </td> <td align="center" class="dados">172 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="315">COLOPROCTOLOGIA - PÓS OPERATÓRIO</td>
+                                                  <td align="center" class="dados">15 </td> <td align="center" class="dados">13 </td> <td align="center" class="dados">11 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="8">DERMATOLOGIA</td>
+                                                  <td align="center" class="dados">899 </td> <td align="center" class="dados">932 </td> <td align="center" class="dados">724 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="265">DERMATOLOGIA - PÓS CIRÚRGICA</td>
+                                                  <td align="center" class="dados">120 </td> <td align="center" class="dados">109 </td> <td align="center" class="dados">86 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="9">ENDOCRINOLOGIA</td>
+                                                  <td align="center" class="dados">562 </td> <td align="center" class="dados">594 </td> <td align="center" class="dados">500 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="15">GASTROCLÍNICA</td>
+                                                  <td align="center" class="dados">692 </td> <td align="center" class="dados">701 </td> <td align="center" class="dados">576 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="468">GASTROCLÍNICA - TRIAGEM COLONOSCOPIA</td>
+                                                  <td align="center" class="dados">28 </td> <td align="center" class="dados">28 </td> <td align="center" class="dados">28 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="469">GASTROCLÍNICA - TRIAGEM ENDOSCOPIA</td>
+                                                  <td align="center" class="dados">129 </td> <td align="center" class="dados">124 </td> <td align="center" class="dados">124 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="17">MASTOLOGIA</td>
+                                                  <td align="center" class="dados">437 </td> <td align="center" class="dados">562 </td> <td align="center" class="dados">472 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1182">MASTOLOGIA - PÓS-OPERATÓRIO</td>
+                                                  <td align="center" class="dados">27 </td> <td align="center" class="dados">30 </td> <td align="center" class="dados">28 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="20">NEUROLOGIA</td>
+                                                  <td align="center" class="dados">665 </td> <td align="center" class="dados">693 </td> <td align="center" class="dados">601 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1645">NEUROLOGIA - SÍFILIS CONGÊNITA</td>
+                                                  <td align="center" class="dados">20 </td> <td align="center" class="dados">10 </td> <td align="center" class="dados">6 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="38">NEUROLOGIA PEDIÁTRICA</td>
+                                                  <td align="center" class="dados">29 </td> <td align="center" class="dados">39 </td> <td align="center" class="dados">32 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="21">OFTALMOLOGIA</td>
+                                                  <td align="center" class="dados">987 </td> <td align="center" class="dados">1065 </td> <td align="center" class="dados">821 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="125">OFTALMOLOGIA - AVALIAÇÃO CIRÚRGICA</td>
+                                                  <td align="center" class="dados">45 </td> <td align="center" class="dados">74 </td> <td align="center" class="dados">73 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="127">OFTALMOLOGIA - AVALIAÇÃO PÓS-CIRÚRGICA</td>
+                                                  <td align="center" class="dados">532 </td> <td align="center" class="dados">518 </td> <td align="center" class="dados">483 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="110">OFTALMOLOGIA - CATARATA</td>
+                                                  <td align="center" class="dados">15 </td> <td align="center" class="dados">15 </td> <td align="center" class="dados">12 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1415">OFTALMOLOGIA - MICROCEFALIA - LINHA DE CUIDADO</td>
+                                                  <td align="center" class="dados">24 </td> <td align="center" class="dados">  </td> <td align="center" class="dados">0 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1208">OFTALMOLOGIA - PTERÍGIO</td>
+                                                  <td align="center" class="dados">18 </td> <td align="center" class="dados">18 </td> <td align="center" class="dados">10 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="979">OFTALMOLOGIA - REFLEXO VERMELHO</td>
+                                                  <td align="center" class="dados">15 </td> <td align="center" class="dados">10 </td> <td align="center" class="dados">6 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="113">OFTALMOLOGIA - RETINA</td>
+                                                  <td align="center" class="dados">618 </td> <td align="center" class="dados">653 </td> <td align="center" class="dados">428 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1643">OFTALMOLOGIA - SÍFILIS CONGÊNITA</td>
+                                                  <td align="center" class="dados">12 </td> <td align="center" class="dados">7 </td> <td align="center" class="dados">6 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="23">ORTOPEDIA</td>
+                                                  <td align="center" class="dados">450 </td> <td align="center" class="dados">539 </td> <td align="center" class="dados">456 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="238">ORTOPEDIA - PÓS-OPERATÓRIO</td>
+                                                  <td align="center" class="dados">44 </td> <td align="center" class="dados">67 </td> <td align="center" class="dados">60 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="22">OTORRINOLARINGOLOGIA</td>
+                                                  <td align="center" class="dados">405 </td> <td align="center" class="dados">431 </td> <td align="center" class="dados">347 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="685">OTORRINOLARINGOLOGIA - NASOFIBROSCOPIA</td>
+                                                  <td align="center" class="dados">111 </td> <td align="center" class="dados">94 </td> <td align="center" class="dados">94 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="1644">OTORRINOLARINGOLOGIA - SÍFILIS CONGÊNITA</td>
+                                                  <td align="center" class="dados">12 </td> <td align="center" class="dados">7 </td> <td align="center" class="dados">6 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="25">PNEUMOLOGIA</td>
+                                                  <td align="center" class="dados">86 </td> <td align="center" class="dados">88 </td> <td align="center" class="dados">75 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="37">PNEUMOLOGIA PEDIÁTRICA</td>
+                                                  <td align="center" class="dados">108 </td> <td align="center" class="dados">110 </td> <td align="center" class="dados">94 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="28">UROLOGIA</td>
+                                                  <td align="center" class="dados">915 </td> <td align="center" class="dados">964 </td> <td align="center" class="dados">820 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="130">UROLOGIA - AVALIAÇÃO PÓS-CIRÚRGICA</td>
+                                                  <td align="center" class="dados">38 </td> <td align="center" class="dados">58 </td> <td align="center" class="dados">55 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="885">UROLOGIA - SAUDE DO HOMEM</td>
+                                                  <td align="center" class="dados">90 </td> <td align="center" class="dados">69 </td> <td align="center" class="dados">67 </td></tr><tr class="dados relatorio">
+                                                  <td nowrap="nowrap" id="lst_primeira" class="dados" title="464">UROLOGIA - VASECTOMIA</td>
+                                                  <td align="center" class="dados">18 </td> <td align="center" class="dados">18 </td> <td align="center" class="dados">17 </td></tr><tr class="titulo relatorio">
+                                               <td nowrap="nowrap" rowspan="2" id="lst_primeira" class="titulo relatorio">Total</td>
+                                               <td align="center"  rowspan="2"  class="titulo relatorio">13576 </td><td align="center" rowspan="2" class="titulo relatorio">14068 </td> <td align="center" rowspan="2" class="titulo relatorio">11665 </td></tr><tr class="titulo relatorio"></tr></table>
