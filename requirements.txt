@@ -2,4 +2,5 @@ streamlit
 pandas
 sqlalchemy
 openpyxl
+plotly
 XlsxWriter
