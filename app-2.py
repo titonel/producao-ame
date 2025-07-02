@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 import openpyxl
 import plotly.express as px
 from io import BytesIO
@@ -25,55 +25,45 @@ def normalizar_especialidade(nome):
     """Normaliza nomes de especialidades para agrupamento."""
     nome = str(nome).upper().strip()
     if nome.startswith("CIRURGIA PLÁSTICA"):
-        return "CIRURGIA PLÁSTICA"
+        return "Cirurgia Plástica"
     elif nome.startswith("OFTALMOLOGIA"):
-        return "OFTALMOLOGIA"
+        return "Oftalmologia"
     elif nome.startswith("CARDIOLOGIA"):
-        return "CARDIOLOGIA"
+        return "Cardiologia"
     elif nome.startswith("DERMATOLOGIA"):
-        return "DERMATOLOGIA"
+        return "Dermatologia"
     elif nome.startswith("ANESTESIOLOGIA"):
-        return "ANESTESIOLOGIA"
+        return "Anestesiologia"
     elif nome.startswith("CIRURGIA VASCULAR"):
-        return "CIRURGIA VASCULAR"
+        return "Cirurgia Vascular"
     elif nome.startswith("COLOPROCTOLOGIA"):
-        return "COLOPROCTOLOGIA"
+        return "Coloproctologia"
     elif nome.startswith("GASTROCLÍNICA") or nome.startswith("GASTROENTEROLOGIA"):
-        return "GASTROENTEROLOGIA"
+        return "Gastroenterologia"
     elif nome.startswith("MASTOLOGIA"):
-        return "MASTOLOGIA"
+        return "Mastologia"
     elif nome.startswith("ORTOPEDIA"):
-        return "ORTOPEDIA"
+        return "Ortopedia"
     elif nome.startswith("OTORRINOLARINGOLOGIA"):
-        return "OTORRINOLARINGOLOGIA"    
+        return "Otorrinolaringologia"    
     elif nome.startswith("UROLOGIA"):
-        return "UROLOGIA"
+        return "Urologia"
     elif nome.startswith("ENDOCRINOLOGIA"):
-        return "ENDOCRINOLOGIA"
+        return "Endocrinologia"
     elif nome.startswith("CIRURGIA PEDIÁTRICA"):
-        return "CIRURGIA PEDIÁTRICA"
+        return "Cirurgia Pediátrica"
     elif nome.startswith("NEUROLOGIA PEDIÁTRICA"):
-        return "NEUROLOGIA PEDIÁTRICA"
+        return "Neurologia Pediátrica"
     elif nome.startswith("NEUROLOGIA"):
-        return "NEUROLOGIA ADULTO"
+        return "Neurologia Adulto"
     elif nome.startswith("PNEUMOLOGIA PEDIÁTRICA"):
-        return "PNEUMOLOGIA PEDIÁTRICA"
+        return "Pneumologia Pediátrica"
     elif nome.startswith("PNEUMOLOGIA"):
-        return "PNEUMOLOGIA ADULTO"    
+        return "Pneumologia Adulto"    
     elif nome.startswith("NEFROLOGIA"):
-        return "NEFROLOGIA"
+        return "Nefrologia"
     elif nome.startswith("CIRURGIA GERAL"):
-        return "CIRURGIA GERAL"
-    elif nome.startswith("FISIATRIA"):
-        return "FISIATRIA"
-    elif nome.startswith("GINECOLOGIA E OBSTETRICIA"):
-        return "GINECOLOGIA E OBSTETRICIA"
-    elif nome.startswith("NEUROCIRURGIA"):
-        return "NEUROCIRURGIA"
-    elif nome.startswith("REUMATOLOGIA"):
-        return "REUMATOLOGIA"
-    elif nome.startswith("ENDOSCOPIA"):
-        return "ENDOSCOPIA"
+        return "Cirurgia Geral"
     # Adicione outras regras conforme necessário ou retorne o próprio nome se não houver correspondência
     return nome
 
@@ -117,7 +107,7 @@ else:
     st.title("📊 Sistema de Produção Médica")
 
     # Navegação lateral
-    pagina = st.sidebar.radio("Escolha a opção:", ["Performance", "Dados Gerais", "Inserir Dados", "Absenteísmo", "Custos Médicos"])
+    pagina = st.sidebar.radio("Escolha a opção:", ["Performance", "Dados Gerais", "Inserir Dados", "Absenteísmo"])
     
     # Botão de Sair na barra lateral
     st.sidebar.markdown("---")
@@ -174,62 +164,51 @@ else:
 
     # Página: PERFORMANCE
     elif pagina == "Performance":
-        st.header("📈 Performance das Agendas Médicas por Especialidade")
+        st.header("📈 Performance das Agendas Médicas")
         
         try:
             df = pd.read_sql_table('producao', con=engine)
 
-            # Remover códigos numéricos iniciais da especialidade
-            df['Especialidade'] = df['Especialidade'].astype(str).str.replace(r'^\d+\s*', '', regex=True).str.strip()
-
-            # Normalizar nomes com agrupamento genérico
-            df['Especialidade_Normalizada'] = df['Especialidade'].apply(normalizar_especialidade)
-            df['Mes_Producao'] = df['Mes_Producao'].astype(str).str.lower() # Garante minúsculas para comparação
+            # Converter mês para número (para ordenar corretamente)
+            df['Mes_Producao'] = df['Mes_Producao'].astype(str).str.lower()
             df['Mes_Num'] = df['Mes_Producao'].apply(lambda x: meses_ordem.index(x) + 1 if x in meses_ordem else 0)
 
-            # Filtros para a página de Performance
+            # Filtros
             anos = sorted(df['Ano_Producao'].unique())
-            meses = sorted(df['Mes_Producao'].unique(), key=lambda x: meses_ordem.index(x.lower()))
-            especialidades = sorted(df['Especialidade_Normalizada'].unique())
+            meses = sorted(df['Mes_Producao'].unique(), key=lambda x: meses_ordem.index(x))
+            tipos = sorted(df['Tipo_Consulta'].dropna().unique())
 
             st.sidebar.subheader("🔎 Filtros de Performance")
             ano_filtro = st.sidebar.multiselect("Ano", anos, default=anos, key="perf_ano")
             mes_filtro = st.sidebar.multiselect("Mês", meses, default=meses, key="perf_mes")
-            especialidade_filtro = st.sidebar.multiselect("Especialidade", especialidades, default=especialidades, key="perf_especialidade")
+            tipo_filtro = st.sidebar.multiselect("Tipo de Consulta", tipos, default=tipos, key="perf_tipo")
+
 
             # Aplicar filtros
             df_filtro = df[
                 (df['Ano_Producao'].isin(ano_filtro)) &
                 (df['Mes_Producao'].isin(mes_filtro)) &
-                (df['Especialidade_Normalizada'].isin(especialidade_filtro))
+                (df['Tipo_Consulta'].isin(tipo_filtro))
             ]
 
             if df_filtro.empty:
                 st.warning("Nenhum dado encontrado para os filtros selecionados.")
             else:
-                # Agrupar por especialidade normalizada e somar Oferta, Agendados e Realizados
-                df_agrupado = df_filtro.groupby('Especialidade_Normalizada').agg({
-                    'Oferta': 'sum',
-                    'Agendados': 'sum',
-                    'Realizados': 'sum'
-                }).reset_index()
+                # Agrupar por mês/ano/especialidade e somar os realizados
+                # Exibe período no formato "mm/yyyy"
+                df_filtro['Periodo'] = df_filtro['Mes_Num'].astype(str).str.zfill(2) + '/' + df_filtro['Ano_Producao'].astype(str)
+                # Ordenar o DataFrame agrupado pelo período para garantir que o gráfico de linha seja contínuo
+                df_agrupado = df_filtro.groupby(['Periodo', 'Especialidade']).agg({'Realizados': 'sum'}).reset_index()
+                df_agrupado['OrderPeriod'] = df_agrupado['Periodo'].apply(lambda x: int(x.split('/')[1] + x.split('/')[0]))
+                df_agrupado = df_agrupado.sort_values(by='OrderPeriod').drop(columns='OrderPeriod')
 
-                # Criar o gráfico de barras
-                fig = px.bar(
-                    df_agrupado,
-                    x='Especialidade_Normalizada',
-                    y='Realizados',
-                    title='Total de Atendimentos Realizados por Especialidade',
-                    labels={'Especialidade_Normalizada': 'Especialidade', 'Realizados': 'Atendimentos Realizados'},
-                    color='Realizados' # Opcional: colore as barras com base no valor de Realizados
-                )
-                fig.update_xaxes(tickangle=45) # Inclina os rótulos do eixo X para melhor legibilidade
-                fig.update_yaxes(rangemode="tozero") # Começa o eixo Y em zero
+                fig = px.line(df_agrupado, x='Periodo', y='Realizados', color='Especialidade',
+                              title='Evolução dos Atendimentos por Especialidade',
+                              markers=True,
+                              labels={'Realizados': 'Atendimentos Realizados', 'Periodo': 'Período (Mês/Ano)'})
+                fig.update_xaxes(tickangle=45)
 
                 st.plotly_chart(fig, use_container_width=True)
-
-                st.subheader("Dados Detalhados de Performance")
-                st.dataframe(df_agrupado.rename(columns={'Especialidade_Normalizada': 'Especialidade'}), use_container_width=True)
 
         except Exception as e:
             st.error(f"Erro ao carregar dados de performance: {e}")
@@ -386,10 +365,10 @@ else:
                 st.plotly_chart(fig_abs, use_container_width=True)
 
                 st.subheader("Dados Detalhados de Absenteísmo")
-                # Prepara os dados para exibição em tabela Streamlit (com formatação de vírgula)
-                df_display_for_st = df_grouped_abs.copy()
-                df_display_for_st['Absenteísmo (%)'] = df_display_for_st['Absenteísmo'].astype(str).str.replace('.', ',', regex=False) + '%'
-                st.dataframe(df_display_for_st[['Ano_Producao', 'Mes_Producao', 'Especialidade_Normalizada', 'Agendados', 'Realizados', 'Absenteísmo (%)']], use_container_width=True)
+                # Prepara os dados para exibição em tabela, formatando o percentual com vírgula
+                df_display = df_grouped_abs.copy()
+                df_display['Absenteísmo (%)'] = df_display['Absenteísmo'].astype(str).str.replace('.', ',', regex=False) + '%'
+                st.dataframe(df_display[['Ano_Producao', 'Mes_Producao', 'Especialidade_Normalizada', 'Agendados', 'Realizados', 'Absenteísmo (%)']], use_container_width=True)
                 
                 # Exportar como Excel
                 output = BytesIO()
@@ -413,6 +392,7 @@ else:
                     absenteismo_col_idx = df_to_export.columns.get_loc('Absenteísmo')
                     
                     # Aplica o formato à coluna de Absenteísmo no Excel
+                    # O set_column usa índices de coluna baseados em zero
                     worksheet.set_column(absenteismo_col_idx, absenteismo_col_idx, None, percent_format)
 
                 processed_data = output.getvalue()
@@ -420,93 +400,11 @@ else:
                 st.download_button(
                     label="📥 Baixar como Excel",
                     data=processed_data,
-                    file_name="dados_consolidados_absenteismo.xlsx",
+                    file_name="dados_consolidados_absenteismo.xlsx", # Nome do arquivo alterado para clareza
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
 
 
+
         except Exception as e:
             st.error(f"❌ Erro ao carregar dados de absenteísmo: {e}")
-
-    # Nova Página: Custos Médicos
-    elif pagina == "Custos Médicos":
-        st.header("💸 Gerenciar Custos Médicos - Contratos")
-        st.write("Faça o upload de uma planilha Excel (.xlsx) contendo os dados dos contratos.")
-
-        uploaded_file = st.file_uploader("Selecione o arquivo Excel de contratos", type=["xlsx"], key="contratos_upload")
-
-        if uploaded_file:
-            try:
-                df_contratos = pd.read_excel(uploaded_file)
-
-                required_columns = [
-                    'Especialidade', 'Serviço', 'Centro de Custo', 'Nome do Centro de Custo',
-                    'Valor Unitário', 'Data Contrato', 'Contratado', 'Meta Mensal',
-                    'Responsável', 'Detalhamento'
-                ]
-
-                # 1. Validar nomes das colunas
-                if not all(col in df_contratos.columns for col in required_columns):
-                    missing_cols = [col for col in required_columns if col not in df_contratos.columns]
-                    st.error(f"❌ Erro: As seguintes colunas obrigatórias não foram encontradas na planilha: {', '.join(missing_cols)}")
-
-                df_contratos = df_contratos[required_columns].copy() # Manter apenas as colunas necessárias e na ordem
-
-                # 2. Validação e Conversão de Tipos
-                errors = []
-
-                # 'Centro de Custo': numérico inteiro de 8 dígitos
-                df_contratos['Centro de Custo'] = pd.to_numeric(df_contratos['Centro de Custo'], errors='coerce')
-                invalid_cc = df_contratos['Centro de Custo'].isna() | (df_contratos['Centro de Custo'] < 10000000) | (df_contratos['Centro de Custo'] > 99999999) | (df_contratos['Centro de Custo'] % 1 != 0)
-                if invalid_cc.any():
-                    errors.append("Centro de Custo deve ser um número inteiro de 8 dígitos. Verifique as linhas com valores inválidos.")
-                    df_contratos.loc[invalid_cc, 'Centro de Custo'] = None # Marcar como inválido
-
-                # 'Valor Unitário': numérico com 2 casas decimais (float)
-                df_contratos['Valor Unitário'] = pd.to_numeric(df_contratos['Valor Unitário'], errors='coerce')
-                if df_contratos['Valor Unitário'].isna().any():
-                    errors.append("Valor Unitário deve ser um número. Verifique as linhas com valores inválidos.")
-                
-                # 'Data Contrato': formato dd/mm/aaaa
-                df_contratos['Data Contrato'] = pd.to_datetime(df_contratos['Data Contrato'], format='%d/%m/%Y', errors='coerce')
-                if df_contratos['Data Contrato'].isna().any():
-                    errors.append("Data Contrato deve estar no formato DD/MM/AAAA. Verifique as linhas com valores inválidos.")
-                
-                # Outros campos como texto
-                for col in ['Especialidade', 'Serviço', 'Nome do Centro de Custo', 'Contratado', 'Meta Mensal', 'Responsável', 'Detalhamento']:
-                    df_contratos[col] = df_contratos[col].astype(str).replace('nan', '', regex=False).str.strip()
-
-
-                if errors:
-                    st.error("❌ Foram encontrados erros de validação na planilha:")
-                    for err in errors:
-                        st.write(f"- {err}")
-                    st.write("Por favor, corrija a planilha e tente novamente.")
-                    st.dataframe(df_contratos.head()) # Mostra as primeiras linhas para depuração
-                else:
-                    # Tenta criar a tabela se não existir
-                    with engine.connect() as connection:
-                        connection.execute(text("""
-                            CREATE TABLE IF NOT EXISTS contratos (
-                                Especialidade TEXT,
-                                Servico TEXT,
-                                "Centro de Custo" INTEGER,
-                                "Nome do Centro de Custo" TEXT,
-                                "Valor Unitario" REAL,
-                                "Data Contrato" DATE,
-                                Contratado TEXT,
-                                "Meta Mensal" TEXT,
-                                Responsavel TEXT,
-                                Detalhamento TEXT
-                            )
-                        """))
-                        connection.commit()
-
-                    # Gravar no banco de dados
-                    df_contratos.to_sql('contratos', con=engine, if_exists='append', index=False)
-                    st.success("✅ Dados dos contratos inseridos com sucesso!")
-                    st.subheader("📄 Visualização dos Dados Inseridos")
-                    st.dataframe(df_contratos)
-
-            except Exception as e:
-                st.error(f"❌ Erro ao processar o arquivo de contratos: {e}")
