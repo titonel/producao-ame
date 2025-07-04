@@ -3,7 +3,13 @@ import openpyxl
 from io import BytesIO
 import os
 import streamlit as st # Importado para usar st.warning, st.error, st.success
-from sqlalchemy import text # Importado para usar text em process_cdr_upload
+from sqlalchemy import create_engine, text, inspect # Importado para usar text e inspect
+import json # Importar para carregar dados geojson
+import bcrypt # Importar bcrypt para criptografia de senha
+
+# --- Configuração do Banco de Dados SQLite (movido para uploads.py) ---
+DATABASE_URL = 'sqlite:///producao.db'
+engine = create_engine(DATABASE_URL)
 
 # --- Funções Auxiliares para Normalização de Especialidades ---
 def normalizar_especialidade(nome):
@@ -12,11 +18,11 @@ def normalizar_especialidade(nome):
     if nome.startswith("CIRURGIA PLÁSTICA"):
         return "Cirurgia Plástica"
     elif nome.startswith("CIRURGIA GERAL"):
-        return "Cirurgia Geral"    
+        return "Cirurgia Geral"
     elif nome.startswith("CIRURGIA VASCULAR"):
-        return "Cirurgia Vascular"    
+        return "Cirurgia Vascular"
     elif nome.startswith("CIRURGIA PEDIÁTRICA"):
-        return "Cirurgia Pediátrica"    
+        return "Cirurgia Pediátrica"
     elif nome.startswith("OFTALMOLOGIA"):
         return "Oftalmologia"
     elif nome.startswith("DERMATOLOGIA"):
@@ -34,7 +40,7 @@ def normalizar_especialidade(nome):
     elif nome.startswith("ORTOPEDIA"):
         return "Ortopedia"
     elif nome.startswith("OTORRINOLARINGOLOGIA"):
-        return "Otorrinolaringologia"    
+        return "Otorrinolaringologia"
     elif nome.startswith("UROLOGIA"):
         return "Urologia"
     elif nome.startswith("ENDOCRINOLOGIA"):
@@ -46,11 +52,133 @@ def normalizar_especialidade(nome):
     elif nome.startswith("PNEUMOLOGIA PEDIÁTRICA"):
         return "Pneumologia Pediátrica"
     elif nome.startswith("PNEUMOLOGIA"):
-        return "Pneumologia"    
+        return "Pneumologia"
     elif nome.startswith("NEFROLOGIA"):
         return "Nefrologia"
     # Adicione outras regras conforme necessário ou retorne o próprio nome se não houver correspondência
     return nome
+
+# --- Funções de Gerenciamento de Usuários (com criptografia bcrypt) ---
+
+def create_user_table(engine):
+    """
+    Cria a tabela 'usuarios' no banco de dados se ela não existir.
+    Armazena o hash da senha.
+    Adiciona usuários padrão ('admin' e 'ame_user') se a tabela estiver vazia.
+    """
+    inspector = inspect(engine)
+    if not inspector.has_table('usuarios'):
+        with engine.connect() as connection:
+            connection.execute(text("""
+                CREATE TABLE IF NOT EXISTS usuarios (
+                    username TEXT PRIMARY KEY,
+                    password_hash TEXT NOT NULL
+                )
+            """))
+            connection.commit()
+        # Após criar a tabela, verifica se ela está vazia e adiciona usuários padrão
+        with engine.connect() as connection:
+            count = connection.execute(text("SELECT COUNT(*) FROM usuarios")).scalar()
+            if count == 0:
+                # Adiciona o usuário admin padrão
+                hashed_admin_password = bcrypt.hashpw("admin_password".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                connection.execute(text("INSERT INTO usuarios (username, password_hash) VALUES (:username, :password_hash)"),
+                                   {"username": "admin", "password_hash": hashed_admin_password})
+                st.success("Usuário 'admin' padrão criado com senha 'admin_password'. Por favor, altere-o na página Admin.")
+
+                # Adiciona o usuário ame_user padrão
+                hashed_ame_password = bcrypt.hashpw("ame_password".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+                connection.execute(text("INSERT INTO usuarios (username, password_hash) VALUES (:username, :password_hash)"),
+                                   {"username": "ame_user", "password_hash": hashed_ame_password})
+                st.success("Usuário 'ame_user' padrão criado com senha 'ame_password'. Por favor, altere-o na página Admin.")
+                connection.commit()
+
+
+def add_user(username, password, engine, is_initial_setup=False):
+    """
+    Adiciona um novo usuário ao banco de dados com a senha criptografada.
+    Retorna True se o usuário foi adicionado, False caso contrário (ex: usuário já existe).
+    """
+    # Verifica se o usuário já existe
+    with engine.connect() as connection:
+        result = connection.execute(text("SELECT username FROM usuarios WHERE username = :username"), {"username": username}).fetchone()
+        if result:
+            if not is_initial_setup:
+                st.error(f"❌ Erro: O usuário '{username}' já existe.")
+            return False
+
+    # Gera o hash da senha
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+    # Insere o novo usuário no banco de dados
+    with engine.connect() as connection:
+        connection.execute(text("INSERT INTO usuarios (username, password_hash) VALUES (:username, :password_hash)"),
+                           {"username": username, "password_hash": hashed_password})
+        connection.commit()
+    if not is_initial_setup:
+        st.success(f"✅ Usuário '{username}' cadastrado com sucesso!")
+    return True
+
+def get_users(engine):
+    """
+    Retorna uma lista de todos os usuários cadastrados (apenas nomes de usuário).
+    """
+    with engine.connect() as connection:
+        result = connection.execute(text("SELECT username FROM usuarios")).fetchall()
+    return [row[0] for row in result]
+
+def update_user_password(username, new_password, engine):
+    """
+    Atualiza a senha de um usuário existente no banco de dados.
+    """
+    hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    with engine.connect() as connection:
+        connection.execute(text("UPDATE usuarios SET password_hash = :password_hash WHERE username = :username"),
+                           {"password_hash": hashed_password, "username": username})
+        connection.commit()
+    st.success(f"✅ Senha do usuário '{username}' atualizada com sucesso!")
+
+def delete_user(username, engine):
+    """
+    Exclui um usuário do banco de dados.
+    """
+    with engine.connect() as connection:
+        connection.execute(text("DELETE FROM usuarios WHERE username = :username"), {"username": username})
+        connection.commit()
+    st.success(f"✅ Usuário '{username}' excluído com sucesso!")
+
+def authenticate(username, password, engine):
+    """
+    Função para autenticar o usuário verificando o hash da senha no banco de dados.
+    """
+    with engine.connect() as connection:
+        result = connection.execute(text("SELECT password_hash FROM usuarios WHERE username = :username"), {"username": username}).fetchone()
+    if result:
+        stored_password_hash = result[0].encode('utf-8')
+        if bcrypt.checkpw(password.encode('utf-8'), stored_password_hash):
+            return True
+    return False
+
+# --- Função para carregar o GeoJSON com cache ---
+@st.cache_data
+def load_geojson(path):
+    """
+    Carrega um arquivo GeoJSON do caminho especificado e o armazena em cache.
+    Retorna os dados GeoJSON ou None em caso de erro.
+    """
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        st.error(f"❌ Erro: O arquivo '{path}' não foi encontrado. Por favor, certifique-se de que ele está no mesmo diretório do seu aplicativo.")
+        return None
+    except json.JSONDecodeError:
+        st.error(f"❌ Erro: O arquivo '{path}' não é um JSON válido ou está corrompido.")
+        return None
+    except Exception as e:
+        st.error(f"❌ Erro inesperado ao carregar o GeoJSON: {e}")
+        return None
+
 
 def process_siresp_upload(uploaded_file_producao, engine):
     """
@@ -59,7 +187,7 @@ def process_siresp_upload(uploaded_file_producao, engine):
     """
     try:
         file_extension = os.path.splitext(uploaded_file_producao.name)[1].lower()
-        
+
         df = None
         tipo_consulta = "N/A"
         mes_producao = "N/A"
@@ -72,19 +200,19 @@ def process_siresp_upload(uploaded_file_producao, engine):
                 ws = wb.active
                 tipo_consulta_cell = ws['A3'].value
                 data_producao_cell = ws['F3'].value
-                
+
                 if tipo_consulta_cell:
                     tipo_consulta = str(tipo_consulta_cell)
                 else:
                     st.warning("Célula A3 (Tipo de Consulta) vazia. Definindo como 'N/A'.")
-                    
+
                 if data_producao_cell and "de" in str(data_producao_cell):
                     mes_producao_str, ano_producao_str = map(str.strip, str(data_producao_cell).split('de'))
                     mes_producao = mes_producao_str.capitalize()
                     ano_producao = ano_producao_str
                 else:
                     st.warning(f"Formato de data em F3 '{data_producao_cell}' não reconhecido ou vazio. Mês e Ano de Produção serão 'N/A'.")
-                    
+
                 uploaded_file_producao.seek(0) # Reseta o ponteiro após a leitura com openpyxl
             else: # Arquivo .xls
                 st.info("Para arquivos .xls, a extração automática de 'Tipo de Consulta', 'Mês' e 'Ano' das células A3 e F3 não é suportada diretamente pelo método atual. Eles serão definidos como 'N/A'.")
@@ -103,7 +231,7 @@ def process_siresp_upload(uploaded_file_producao, engine):
                 st.error(f"❌ Erro: O arquivo CSV não contém as colunas esperadas: {', '.join(expected_csv_cols)}. Por favor, verifique o cabeçalho.")
                 return # Retorna para parar a execução da função
             df = df[expected_csv_cols].copy() # Seleciona e reordena as colunas
-        
+
         else:
             st.error("❌ Formato de arquivo não suportado. Por favor, faça o upload de um arquivo .xlsx, .xls ou .csv.")
             return # Retorna para parar a execução da função
@@ -141,7 +269,7 @@ def process_contratos_upload(uploaded_file_contratos, engine):
         if df_contratos.columns[0] == 'Área':
             df_contratos.rename(columns={'Área': 'Especialidade'}, inplace=True)
             st.info("A coluna 'Área' foi automaticamente renomeada para 'Especialidade'.")
-        
+
         required_columns = [
             'Especialidade', 'Serviço', 'Centro de Custo', 'Nome do Centro de Custo',
             'Valor Unitário', 'Data Contrato', 'Contratado', 'Meta Mensal',
@@ -171,12 +299,12 @@ def process_contratos_upload(uploaded_file_contratos, engine):
         df_contratos['Valor Unitário'] = pd.to_numeric(df_contratos['Valor Unitário'], errors='coerce')
         if df_contratos['Valor Unitário'].isna().any():
             errors.append("Valor Unitário deve ser um número. Verifique as linhas com valores inválidos.")
-        
+
         # 'Data Contrato': formato dd/mm/aaaa
         df_contratos['Data Contrato'] = pd.to_datetime(df_contratos['Data Contrato'], format='%d/%m/%Y', errors='coerce')
         if df_contratos['Data Contrato'].isna().any():
             errors.append("Data Contrato deve estar no formato DD/MM/AAAA. Verifique as linhas com valores inválidos.")
-        
+
         # Outros campos como texto
         for col in ['Especialidade', 'Serviço', 'Nome do Centro de Custo', 'Contratado', 'Meta Mensal', 'Responsável', 'Detalhamento']:
             df_contratos[col] = df_contratos[col].astype(str).replace('nan', '', regex=False).str.strip()
@@ -226,10 +354,10 @@ def process_cdr_upload(uploaded_file_cdr, engine):
     """
     try:
         file_extension = os.path.splitext(uploaded_file_cdr.name)[1].lower()
-        
+
         if file_extension == ".csv":
             df_cdr = None
-            
+
             # Tenta ler com utf-8 e delimitador padrão (vírgula)
             try:
                 uploaded_file_cdr.seek(0) # Garante que o ponteiro está no início
@@ -237,7 +365,7 @@ def process_cdr_upload(uploaded_file_cdr, engine):
             except (UnicodeDecodeError, pd.errors.ParserError) as e_utf8:
                 st.warning(f"Erro ao ler CSV com UTF-8 e vírgula: {e_utf8}. Tentando com latin-1 e ponto e vírgula...")
                 uploaded_file_cdr.seek(0) # Resetar o ponteiro do arquivo
-                
+
                 # Tenta ler com latin-1 e ponto e vírgula
                 try:
                     df_cdr = pd.read_csv(uploaded_file_cdr, encoding='latin-1', sep=';')
@@ -245,7 +373,7 @@ def process_cdr_upload(uploaded_file_cdr, engine):
                     st.error(f"❌ Erro ao ler CSV com latin-1 e ponto e vírgula: {e_latin1}. "
                              "Por favor, verifique a codificação e o delimitador do seu arquivo CSV.")
                     return # Retorna para parar a execução da função
-            
+
             if df_cdr is not None:
                 # Validação: Verifica se a coluna 'Município' existe
                 if 'Município' not in df_cdr.columns:
@@ -254,10 +382,10 @@ def process_cdr_upload(uploaded_file_cdr, engine):
 
                 # Colunas a serem removidas explicitamente
                 columns_to_drop_explicit = [
-                    'Profissional', 'Turno', 'Data Agenda', 'Horário', 
+                    'Profissional', 'Turno', 'Data Agenda', 'Horário',
                     'Filipeta', 'Ret. Filipeta', 'Aceita Teleconsulta'
                 ]
-                
+
                 # Remove as colunas explícitas se existirem
                 for col in columns_to_drop_explicit:
                     if col in df_cdr.columns:
@@ -293,7 +421,7 @@ def process_cdr_upload(uploaded_file_cdr, engine):
                 st.dataframe(df_cdr)
         else:
             st.error("❌ Formato de arquivo não suportado. Por favor, faça o upload de um arquivo .csv para CDR.")
-            
+
     except Exception as e:
         st.error(f"❌ Erro ao processar o arquivo de CDR: {e}")
         st.exception(e) # Exibe o traceback completo para depuração

@@ -1,49 +1,30 @@
 import streamlit as st
 import pandas as pd
 from sqlalchemy import create_engine, text
-import openpyxl
-import plotly.express as px
 from io import BytesIO
-import os 
-import json # Importar para carregar dados geojson
+import os
+import plotly.express as px
 
-# Importa as funções de processamento de upload do arquivo uploads.py
-from uploads import normalizar_especialidade, process_siresp_upload, process_contratos_upload, process_cdr_upload
+# Importa as funções de processamento de upload e as novas funções de gerenciamento de usuários
+# e GeoJSON do arquivo uploads.py
+from uploads import (
+    normalizar_especialidade,
+    process_siresp_upload,
+    process_contratos_upload,
+    process_cdr_upload,
+    create_user_table, # Nova importação
+    add_user,          # Nova importação
+    get_users,         # Nova importação
+    update_user_password, # Nova importação
+    delete_user,       # Nova importação
+    authenticate,      # Nova importação
+    load_geojson,      # Nova importação
+    engine             # Importa o objeto engine que agora é criado em uploads.py
+)
 
-# --- Gestão de Usuários (para demonstração, usar método seguro em produção) ---
-USERS = {
-    "ame_user": "ame_password",  # Substitua por uma forma segura de armazenar/recuperar credenciais
-    "admin": "admin_password"
-}
-
-def authenticate(username, password):
-    """
-    Função para autenticar o usuário.
-    Em uma aplicação real, verificar com senhas hash.
-    """
-    if username in USERS and USERS[username] == password:
-        return True
-    return False
-
-# Função para carregar o GeoJSON com cache
-@st.cache_data
-def load_geojson(path):
-    """
-    Carrega um arquivo GeoJSON do caminho especificado e o armazena em cache.
-    Retorna os dados GeoJSON ou None em caso de erro.
-    """
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        st.error(f"❌ Erro: O arquivo '{path}' não foi encontrado. Por favor, certifique-se de que ele está no mesmo diretório do seu aplicativo.")
-        return None
-    except json.JSONDecodeError:
-        st.error(f"❌ Erro: O arquivo '{path}' não é um JSON válido ou está corrompido.")
-        return None
-    except Exception as e:
-        st.error(f"❌ Erro inesperado ao carregar o GeoJSON: {e}")
-        return None
+# --- Configuração do Banco de Dados SQLite ---
+# O engine agora é importado de uploads.py
+# engine = create_engine('sqlite:///producao.db') # Removido daqui
 
 # Lista de meses para ordenação correta
 meses_ordem = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
@@ -59,6 +40,10 @@ if 'authenticated' not in st.session_state:
 if 'username' not in st.session_state:
     st.session_state.username = None
 
+# Garante que a tabela de usuários e o admin padrão existam ao iniciar o aplicativo
+# Esta chamada é feita uma vez no início do script para configurar o banco de dados
+create_user_table(engine)
+
 # Se o usuário não estiver autenticado, exibe a página de login
 if not st.session_state.authenticated:
     st.title("Login - AME Caraguatatuba")
@@ -68,7 +53,8 @@ if not st.session_state.authenticated:
     password = st.text_input("Senha", type="password", key="login_password")
 
     if st.button("Entrar", key="login_button"):
-        if authenticate(username, password):
+        # Chama a função authenticate do uploads.py
+        if authenticate(username, password, engine):
             st.session_state.authenticated = True
             st.session_state.username = username  # Armazena o nome de usuário no estado da sessão
             st.success(f"Bem-vindo, {username}!")
@@ -76,8 +62,9 @@ if not st.session_state.authenticated:
         else:
             st.error("Usuário ou senha inválidos.")
     st.markdown("---") # Separador visual
-    st.info("Use 'ame_user' como usuário e 'ame_password' como senha para testar.")
-    st.info("Ou 'admin' como usuário e 'admin_password' como senha.")
+    st.info("Use 'admin' como usuário e 'admin_password' como senha para o primeiro acesso.")
+    st.info("Ou 'ame_user' como usuário e 'ame_password' como senha para testar.")
+
 
 # Se o usuário estiver autenticado, exibe a aplicação principal
 else:
@@ -85,8 +72,12 @@ else:
     st.title("📊 Sistema de Produção Médica")
 
     # Navegação lateral
-    pagina = st.sidebar.radio("Escolha a opção:", ["Performance", "Dados Gerais", "Uploads", "Absenteísmo", "Custos Médicos", "CDR"])
-    
+    # Adiciona a página 'Admin' apenas se o usuário logado for 'admin'
+    pages = ["Performance", "Dados Gerais", "Uploads", "Absenteísmo", "Custos Médicos", "CDR"]
+    if st.session_state.username == 'admin':
+        pages.append("Admin")
+    pagina = st.sidebar.radio("Escolha a opção:", pages)
+
     # Botão de Sair na barra lateral
     st.sidebar.markdown("---")
     if st.sidebar.button("Sair", key="logout_button"):
@@ -94,20 +85,17 @@ else:
         st.session_state.username = None
         st.rerun() # Recarrega a página para voltar à tela de login
 
-    # Conexão com o banco SQLite
-    engine = create_engine('sqlite:///producao.db')
-
     # Página: UPLOADS
     if pagina == "Uploads":
         st.header("⬆️ Upload de Arquivos")
-        
+
         st.subheader("Upload de Dados de Produção (SIRESP)")
         uploaded_file_producao = st.file_uploader("Selecione o arquivo de produção (Excel: .xlsx, .xls; CSV: .csv)", type=["xlsx", "xls", "csv"], key="upload_producao")
 
         if uploaded_file_producao:
             # Chama a função do uploads.py para processar o arquivo
             process_siresp_upload(uploaded_file_producao, engine)
-        
+
         st.markdown("---") # Separador para os uploads
 
         st.subheader("Upload de Dados de Custos Médicos (Contratos)")
@@ -116,7 +104,7 @@ else:
         if uploaded_file_contratos:
             # Chama a função do uploads.py para processar o arquivo
             process_contratos_upload(uploaded_file_contratos, engine)
-        
+
         st.markdown("---") # Separador para os uploads
 
         st.subheader("Upload de Dados de CDR (CSV)")
@@ -135,7 +123,7 @@ else:
     # Página: PERFORMANCE
     elif pagina == "Performance":
         st.header("📈 Performance das Agendas Médicas por Especialidade")
-        
+
         try:
             df = pd.read_sql_table('producao', con=engine)
 
@@ -199,7 +187,7 @@ else:
 
         try:
             df = pd.read_sql_table('producao', con=engine)
-            
+
             # Remover códigos numéricos iniciais da especialidade
             df['Especialidade'] = df['Especialidade'].astype(str).str.replace(r'^\d+\s*', '', regex=True).str.strip()
 
@@ -248,9 +236,9 @@ else:
                 )
 
                 df_grouped['Absenteísmo (%)'] = (df_grouped['Absenteísmo'] * 100).round(2).astype(str).str.replace('.', ',', regex=False) + '%'
-                
+
                 st.dataframe(df_grouped, use_container_width=True)
-                
+
                 # Exportar como Excel
                 output = BytesIO()
                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -350,13 +338,13 @@ else:
                 df_display_for_st = df_grouped_abs.copy()
                 df_display_for_st['Absenteísmo (%)'] = df_display_for_st['Absenteísmo'].astype(str).str.replace('.', ',', regex=False) + '%'
                 st.dataframe(df_display_for_st[['Ano_Producao', 'Mes_Producao', 'Especialidade_Normalizada', 'Agendados', 'Realizados', 'Absenteísmo (%)']], use_container_width=True)
-                
+
                 # Exportar como Excel
                 output = BytesIO()
                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                     # Seleciona as colunas desejadas para exportação, usando o valor numérico de 'Absenteísmo'
                     df_to_export = df_grouped_abs[['Ano_Producao', 'Mes_Producao', 'Especialidade_Normalizada', 'Agendados', 'Realizados', 'Absenteísmo']].copy()
-                    
+
                     # Garante que 'Ano_Producao' seja do tipo inteiro
                     df_to_export['Ano_Producao'] = df_to_export['Ano_Producao'].astype(int)
 
@@ -368,10 +356,10 @@ else:
 
                     # Cria um formato de porcentagem (Excel usará a localidade para ponto/vírgula)
                     percent_format = workbook.add_format({'num_format': '0.00%', 'align': 'center'})
-                    
+
                     # Encontra o índice da coluna 'Absenteísmo' no DataFrame que será exportado
                     absenteismo_col_idx = df_to_export.columns.get_loc('Absenteísmo')
-                    
+
                     # Aplica o formato à coluna de Absenteísmo no Excel
                     worksheet.set_column(absenteismo_col_idx, absenteismo_col_idx, None, percent_format)
 
@@ -391,16 +379,16 @@ else:
     # Página: Custos Médicos (agora para visualização, não upload)
     elif pagina == "Custos Médicos":
         st.header("💸 Visualização e Análise de Custos Médicos - Contratos")
-        
+
         try:
             # Tenta ler os dados da tabela de contratos
             df_contratos = pd.read_sql_table('contratos', con=engine)
-            
+
             if df_contratos.empty:
                 st.warning("Nenhum dado de contrato encontrado. Por favor, faça o upload dos dados na página 'Uploads'.")
             else:
                 st.subheader("Dados dos Contratos Ativos")
-                
+
                 # Exibir um dataframe com os dados dos contratos
                 st.dataframe(df_contratos, use_container_width=True)
 
@@ -411,7 +399,7 @@ else:
         except Exception as e:
             st.error(f"❌ Erro ao carregar os dados de contratos: {e}")
             st.info("Verifique se a tabela 'contratos' existe no banco de dados. Se não existir, faça o upload de um arquivo de contratos na página 'Uploads'.")
-    
+
     # Nova Página: CDR
     elif pagina == "CDR":
         st.header("🗺️ Mapa de Dados de CDR por Município")
@@ -433,7 +421,7 @@ else:
 
                     # Obter lista de municípios para o filtro
                     municipios_disponiveis = sorted(df_cdr['Município'].unique())
-                    
+
                     st.sidebar.subheader("🔎 Filtro de Município (CDR)")
                     # Adicionar um seletor para filtrar por município
                     selected_municipio = st.sidebar.selectbox(
@@ -464,7 +452,7 @@ else:
                         hover_name="Município",
                         hover_data={"Valor": True}
                     )
-                    
+
                     fig_map.update_geos(fitbounds="locations", visible=False) # Ajusta o zoom para os municípios presentes
                     fig_map.update_layout(margin={"r":0,"t":0,"l":0,"b":0}) # Remove margens
 
@@ -477,3 +465,70 @@ else:
             st.info("Certifique-se de que o arquivo CSV de CDR contém a coluna 'Município' e que os nomes dos municípios correspondem aos dados do GeoJSON.")
             st.info("Para um mapa coroplético funcional, você precisará de um arquivo GeoJSON com as geometrias dos municípios brasileiros. Um exemplo pode ser encontrado buscando por 'geojson municípios Brasil'.")
 
+    # Nova Página: ADMIN
+    elif pagina == "Admin":
+        if st.session_state.username == 'admin':
+            st.header("⚙️ Gerenciamento de Usuários")
+
+            st.subheader("Cadastrar Novo Usuário")
+            with st.form("add_user_form", clear_on_submit=True):
+                new_username = st.text_input("Nome de Usuário", key="new_username_input")
+                new_password = st.text_input("Senha", type="password", key="new_password_input")
+                confirm_password = st.text_input("Confirmar Senha", type="password", key="confirm_password_input")
+                add_user_button = st.form_submit_button("Cadastrar Usuário")
+
+                if add_user_button:
+                    if new_username and new_password and confirm_password:
+                        if new_password == confirm_password:
+                            # Chama a função add_user do uploads.py
+                            add_user(new_username, new_password, engine)
+                        else:
+                            st.error("As senhas não coincidem.")
+                    else:
+                        st.error("Por favor, preencha todos os campos.")
+
+            st.subheader("Usuários Existentes")
+            # Chama a função get_users do uploads.py
+            users = get_users(engine)
+            if users:
+                df_users = pd.DataFrame(users, columns=["Usuário"])
+                st.dataframe(df_users, use_container_width=True)
+
+                st.subheader("Editar Senha de Usuário")
+                with st.form("edit_user_form", clear_on_submit=True):
+                    user_to_edit = st.selectbox("Selecione o Usuário para Editar", users, key="user_to_edit_select")
+                    new_password_edit = st.text_input("Nova Senha", type="password", key="new_password_edit_input")
+                    confirm_password_edit = st.text_input("Confirmar Nova Senha", type="password", key="confirm_password_edit_input")
+                    edit_user_button = st.form_submit_button("Atualizar Senha")
+
+                    if edit_user_button:
+                        if user_to_edit and new_password_edit and confirm_password_edit:
+                            if new_password_edit == confirm_password_edit:
+                                # Chama a função update_user_password do uploads.py
+                                update_user_password(user_to_edit, new_password_edit, engine)
+                            else:
+                                st.error("As senhas não coincidem.")
+                        else:
+                            st.error("Por favor, selecione um usuário e preencha a nova senha.")
+
+                st.subheader("Excluir Usuário")
+                with st.form("delete_user_form", clear_on_submit=True):
+                    user_to_delete = st.selectbox("Selecione o Usuário para Excluir", users, key="user_to_delete_select")
+                    delete_user_button = st.form_submit_button("Excluir Usuário")
+
+                    if delete_user_button:
+                        if user_to_delete:
+                            if user_to_delete == st.session_state.username:
+                                st.error("Você não pode excluir o seu próprio usuário enquanto estiver logado.")
+                            elif user_to_delete == "admin":
+                                st.error("O usuário 'admin' não pode ser excluído para garantir o acesso ao gerenciamento do sistema.")
+                            else:
+                                # Chama a função delete_user do uploads.py
+                                delete_user(user_to_delete, engine)
+                                st.rerun() # Recarrega para atualizar a lista de usuários
+                        else:
+                            st.error("Por favor, selecione um usuário para excluir.")
+            else:
+                st.info("Nenhum usuário cadastrado ainda. Cadastre o primeiro usuário acima.")
+        else:
+            st.warning("Você não tem permissão para acessar esta página.")
