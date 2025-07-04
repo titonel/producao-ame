@@ -4,8 +4,13 @@ from sqlalchemy import create_engine, text
 import openpyxl
 import plotly.express as px
 from io import BytesIO
+import os 
+import json # Importar para carregar dados geojson
 
-# --- Gestão de Usuários (para demonstração, use um método seguro em produção) ---
+# Importa as funções de processamento de upload do arquivo uploads.py
+from uploads import normalizar_especialidade, process_siresp_upload, process_contratos_upload, process_cdr_upload
+
+# --- Gestão de Usuários (para demonstração, usar método seguro em produção) ---
 USERS = {
     "ame_user": "ame_password",  # Substitua por uma forma segura de armazenar/recuperar credenciais
     "admin": "admin_password"
@@ -14,68 +19,31 @@ USERS = {
 def authenticate(username, password):
     """
     Função para autenticar o usuário.
-    Em uma aplicação real, você verificaria em um banco de dados com senhas hash.
+    Em uma aplicação real, verificar com senhas hash.
     """
     if username in USERS and USERS[username] == password:
         return True
     return False
 
-# --- Funções Auxiliares para Normalização de Especialidades ---
-def normalizar_especialidade(nome):
-    """Normaliza nomes de especialidades para agrupamento."""
-    nome = str(nome).upper().strip()
-    if nome.startswith("CIRURGIA PLÁSTICA"):
-        return "CIRURGIA PLÁSTICA"
-    elif nome.startswith("OFTALMOLOGIA"):
-        return "OFTALMOLOGIA"
-    elif nome.startswith("CARDIOLOGIA"):
-        return "CARDIOLOGIA"
-    elif nome.startswith("DERMATOLOGIA"):
-        return "DERMATOLOGIA"
-    elif nome.startswith("ANESTESIOLOGIA"):
-        return "ANESTESIOLOGIA"
-    elif nome.startswith("CIRURGIA VASCULAR"):
-        return "CIRURGIA VASCULAR"
-    elif nome.startswith("COLOPROCTOLOGIA"):
-        return "COLOPROCTOLOGIA"
-    elif nome.startswith("GASTROCLÍNICA") or nome.startswith("GASTROENTEROLOGIA"):
-        return "GASTROENTEROLOGIA"
-    elif nome.startswith("MASTOLOGIA"):
-        return "MASTOLOGIA"
-    elif nome.startswith("ORTOPEDIA"):
-        return "ORTOPEDIA"
-    elif nome.startswith("OTORRINOLARINGOLOGIA"):
-        return "OTORRINOLARINGOLOGIA"    
-    elif nome.startswith("UROLOGIA"):
-        return "UROLOGIA"
-    elif nome.startswith("ENDOCRINOLOGIA"):
-        return "ENDOCRINOLOGIA"
-    elif nome.startswith("CIRURGIA PEDIÁTRICA"):
-        return "CIRURGIA PEDIÁTRICA"
-    elif nome.startswith("NEUROLOGIA PEDIÁTRICA"):
-        return "NEUROLOGIA PEDIÁTRICA"
-    elif nome.startswith("NEUROLOGIA"):
-        return "NEUROLOGIA ADULTO"
-    elif nome.startswith("PNEUMOLOGIA PEDIÁTRICA"):
-        return "PNEUMOLOGIA PEDIÁTRICA"
-    elif nome.startswith("PNEUMOLOGIA"):
-        return "PNEUMOLOGIA ADULTO"    
-    elif nome.startswith("NEFROLOGIA"):
-        return "NEFROLOGIA"
-    elif nome.startswith("CIRURGIA GERAL"):
-        return "CIRURGIA GERAL"
-    elif nome.startswith("FISIATRIA"):
-        return "FISIATRIA"
-    elif nome.startswith("GINECOLOGIA E OBSTETRICIA"):
-        return "GINECOLOGIA E OBSTETRICIA"
-    elif nome.startswith("NEUROCIRURGIA"):
-        return "NEUROCIRURGIA"
-    elif nome.startswith("REUMATOLOGIA"):
-        return "REUMATOLOGIA"
-    elif nome.startswith("ENDOSCOPIA"):
-        return "ENDOSCOPIA"
-    # Adicione outras regras conforme necessário ou retorne o próprio nome se não houver correspondência
-    return nome
+# Função para carregar o GeoJSON com cache
+@st.cache_data
+def load_geojson(path):
+    """
+    Carrega um arquivo GeoJSON do caminho especificado e o armazena em cache.
+    Retorna os dados GeoJSON ou None em caso de erro.
+    """
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        st.error(f"❌ Erro: O arquivo '{path}' não foi encontrado. Por favor, certifique-se de que ele está no mesmo diretório do seu aplicativo.")
+        return None
+    except json.JSONDecodeError:
+        st.error(f"❌ Erro: O arquivo '{path}' não é um JSON válido ou está corrompido.")
+        return None
+    except Exception as e:
+        st.error(f"❌ Erro inesperado ao carregar o GeoJSON: {e}")
+        return None
 
 # Lista de meses para ordenação correta
 meses_ordem = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
@@ -117,7 +85,7 @@ else:
     st.title("📊 Sistema de Produção Médica")
 
     # Navegação lateral
-    pagina = st.sidebar.radio("Escolha a opção:", ["Performance", "Dados Gerais", "Inserir Dados", "Absenteísmo", "Custos Médicos"])
+    pagina = st.sidebar.radio("Escolha a opção:", ["Performance", "Dados Gerais", "Uploads", "Absenteísmo", "Custos Médicos", "CDR"])
     
     # Botão de Sair na barra lateral
     st.sidebar.markdown("---")
@@ -129,48 +97,40 @@ else:
     # Conexão com o banco SQLite
     engine = create_engine('sqlite:///producao.db')
 
-    # Página: INSERIR DADOS
-    if pagina == "Inserir Dados":
-        st.header("📥 Inserir Dados da Produção")
-        uploaded_file = st.file_uploader("Selecione o arquivo .xlsx exportado do SIRESP", type=["xlsx"])
+    # Página: UPLOADS
+    if pagina == "Uploads":
+        st.header("⬆️ Upload de Arquivos")
+        
+        st.subheader("Upload de Dados de Produção (SIRESP)")
+        uploaded_file_producao = st.file_uploader("Selecione o arquivo de produção (Excel: .xlsx, .xls; CSV: .csv)", type=["xlsx", "xls", "csv"], key="upload_producao")
 
-        if uploaded_file:
-            try:
-                # Carregar workbook
-                wb = openpyxl.load_workbook(BytesIO(uploaded_file.read()), data_only=True)
-                ws = wb.active
+        if uploaded_file_producao:
+            # Chama a função do uploads.py para processar o arquivo
+            process_siresp_upload(uploaded_file_producao, engine)
+        
+        st.markdown("---") # Separador para os uploads
 
-                # Extrair metadados
-                tipo_consulta = ws['A3'].value
-                data_producao = ws['F3'].value
-                mes_producao, ano_producao = map(str.strip, data_producao.split('de'))
+        st.subheader("Upload de Dados de Custos Médicos (Contratos)")
+        uploaded_file_contratos = st.file_uploader("Selecione o arquivo Excel de contratos", type=["xlsx"], key="upload_contratos")
 
-                # Reabrir para leitura com pandas
-                uploaded_file.seek(0)
-                df = pd.read_excel(uploaded_file, skiprows=6)
+        if uploaded_file_contratos:
+            # Chama a função do uploads.py para processar o arquivo
+            process_contratos_upload(uploaded_file_contratos, engine)
+        
+        st.markdown("---") # Separador para os uploads
 
-                # Manter apenas colunas A-D
-                df = df.iloc[:, :4]
-                df.columns = ['Especialidade', 'Oferta', 'Agendados', 'Realizados']
+        st.subheader("Upload de Dados de CDR (CSV)")
+        uploaded_file_cdr = st.file_uploader("Selecione o arquivo CSV de CDR", type=["csv"], key="upload_cdr")
 
-                # Remover linhas inválidas
-                df = df[df['Oferta'].notna()]
-                df = df[df['Oferta'].astype(str).str.lower() != 'total']
+        if uploaded_file_cdr:
+            # Chama a função do uploads.py para processar o arquivo CDR
+            process_cdr_upload(uploaded_file_cdr, engine)
 
-                # Adicionar colunas auxiliares
-                df['Tipo_Consulta'] = tipo_consulta
-                df['Mes_Producao'] = mes_producao.capitalize()
-                df['Ano_Producao'] = ano_producao
+    # Página: INSERIR DADOS (Agora vazia, pois o upload foi movido para 'Uploads')
+    elif pagina == "Inserir Dados":
+        st.header("ℹ️ Informações sobre Inserção de Dados")
+        st.info("A funcionalidade de upload de dados foi movida para a página 'Uploads'.")
 
-                # Gravar no banco
-                df.to_sql('producao', con=engine, if_exists='append', index=False)
-
-                st.success("✅ Dados inseridos com sucesso!")
-                st.subheader("📄 Visualização dos Dados Inseridos")
-                st.dataframe(df)
-
-            except Exception as e:
-                st.error(f"❌ Erro ao processar o arquivo: {e}")
 
     # Página: PERFORMANCE
     elif pagina == "Performance":
@@ -428,85 +388,92 @@ else:
         except Exception as e:
             st.error(f"❌ Erro ao carregar dados de absenteísmo: {e}")
 
-    # Nova Página: Custos Médicos
+    # Página: Custos Médicos (agora para visualização, não upload)
     elif pagina == "Custos Médicos":
-        st.header("💸 Gerenciar Custos Médicos - Contratos")
-        st.write("Faça o upload de uma planilha Excel (.xlsx) contendo os dados dos contratos.")
-
-        uploaded_file = st.file_uploader("Selecione o arquivo Excel de contratos", type=["xlsx"], key="contratos_upload")
-
-        if uploaded_file:
-            try:
-                df_contratos = pd.read_excel(uploaded_file)
-
-                required_columns = [
-                    'Especialidade', 'Serviço', 'Centro de Custo', 'Nome do Centro de Custo',
-                    'Valor Unitário', 'Data Contrato', 'Contratado', 'Meta Mensal',
-                    'Responsável', 'Detalhamento'
-                ]
-
-                # 1. Validar nomes das colunas
-                if not all(col in df_contratos.columns for col in required_columns):
-                    missing_cols = [col for col in required_columns if col not in df_contratos.columns]
-                    st.error(f"❌ Erro: As seguintes colunas obrigatórias não foram encontradas na planilha: {', '.join(missing_cols)}")
-
-                df_contratos = df_contratos[required_columns].copy() # Manter apenas as colunas necessárias e na ordem
-
-                # 2. Validação e Conversão de Tipos
-                errors = []
-
-                # 'Centro de Custo': numérico inteiro de 8 dígitos
-                df_contratos['Centro de Custo'] = pd.to_numeric(df_contratos['Centro de Custo'], errors='coerce')
-                invalid_cc = df_contratos['Centro de Custo'].isna() | (df_contratos['Centro de Custo'] < 10000000) | (df_contratos['Centro de Custo'] > 99999999) | (df_contratos['Centro de Custo'] % 1 != 0)
-                if invalid_cc.any():
-                    errors.append("Centro de Custo deve ser um número inteiro de 8 dígitos. Verifique as linhas com valores inválidos.")
-                    df_contratos.loc[invalid_cc, 'Centro de Custo'] = None # Marcar como inválido
-
-                # 'Valor Unitário': numérico com 2 casas decimais (float)
-                df_contratos['Valor Unitário'] = pd.to_numeric(df_contratos['Valor Unitário'], errors='coerce')
-                if df_contratos['Valor Unitário'].isna().any():
-                    errors.append("Valor Unitário deve ser um número. Verifique as linhas com valores inválidos.")
+        st.header("💸 Visualização e Análise de Custos Médicos - Contratos")
+        
+        try:
+            # Tenta ler os dados da tabela de contratos
+            df_contratos = pd.read_sql_table('contratos', con=engine)
+            
+            if df_contratos.empty:
+                st.warning("Nenhum dado de contrato encontrado. Por favor, faça o upload dos dados na página 'Uploads'.")
+            else:
+                st.subheader("Dados dos Contratos Ativos")
                 
-                # 'Data Contrato': formato dd/mm/aaaa
-                df_contratos['Data Contrato'] = pd.to_datetime(df_contratos['Data Contrato'], format='%d/%m/%Y', errors='coerce')
-                if df_contratos['Data Contrato'].isna().any():
-                    errors.append("Data Contrato deve estar no formato DD/MM/AAAA. Verifique as linhas com valores inválidos.")
-                
-                # Outros campos como texto
-                for col in ['Especialidade', 'Serviço', 'Nome do Centro de Custo', 'Contratado', 'Meta Mensal', 'Responsável', 'Detalhamento']:
-                    df_contratos[col] = df_contratos[col].astype(str).replace('nan', '', regex=False).str.strip()
+                # Exibir um dataframe com os dados dos contratos
+                st.dataframe(df_contratos, use_container_width=True)
 
+                # Você pode adicionar filtros e gráficos para analisar os custos aqui
+                st.subheader("Análise de Custos (Em Desenvolvimento)")
+                st.info("Funcionalidades adicionais para análise de custos serão implementadas aqui.")
 
-                if errors:
-                    st.error("❌ Foram encontrados erros de validação na planilha:")
-                    for err in errors:
-                        st.write(f"- {err}")
-                    st.write("Por favor, corrija a planilha e tente novamente.")
-                    st.dataframe(df_contratos.head()) # Mostra as primeiras linhas para depuração
+        except Exception as e:
+            st.error(f"❌ Erro ao carregar os dados de contratos: {e}")
+            st.info("Verifique se a tabela 'contratos' existe no banco de dados. Se não existir, faça o upload de um arquivo de contratos na página 'Uploads'.")
+    
+    # Nova Página: CDR
+    elif pagina == "CDR":
+        st.header("🗺️ Mapa de Dados de CDR por Município")
+
+        try:
+            df_cdr = pd.read_sql_table('cdr', con=engine)
+
+            if df_cdr.empty:
+                st.warning("Nenhum dado de CDR encontrado. Por favor, faça o upload dos dados na página 'Uploads'.")
+            else:
+                # Carregar dados GeoJSON para o mapa usando a função cacheada
+                geojson_data = load_geojson("geojs-35-mun.json")
+
+                if geojson_data:
+                    # Assumindo que 'Valor' no df_cdr representa a quantidade de pacientes ou uma métrica similar
+                    # Se 'Valor' não for a quantidade de pacientes, você precisará agrupar e contar aqui.
+                    # Exemplo: df_cdr_grouped = df_cdr.groupby('Município').size().reset_index(name='Quantidade_Pacientes')
+                    # E então usar 'Quantidade_Pacientes' no `color` do px.choropleth
+
+                    # Obter lista de municípios para o filtro
+                    municipios_disponiveis = sorted(df_cdr['Município'].unique())
+                    
+                    st.sidebar.subheader("🔎 Filtro de Município (CDR)")
+                    # Adicionar um seletor para filtrar por município
+                    selected_municipio = st.sidebar.selectbox(
+                        "Selecione um Município para filtrar a tabela:",
+                        ['Todos'] + municipios_disponiveis,
+                        key="cdr_municipio_filter"
+                    )
+
+                    df_cdr_filtered = df_cdr.copy()
+                    if selected_municipio != 'Todos':
+                        df_cdr_filtered = df_cdr_filtered[df_cdr_filtered['Município'] == selected_municipio]
+                        st.subheader(f"Dados de CDR para: {selected_municipio}")
+                    else:
+                        st.subheader("Dados de CDR por Município")
+
+                    st.dataframe(df_cdr_filtered, use_container_width=True)
+
+                    # Criar o mapa coroplético
+                    fig_map = px.choropleth(
+                        df_cdr, # Usar o DataFrame completo para o mapa, para mostrar todos os municípios
+                        geojson=geojson_data,
+                        locations='Município', # Coluna no df_cdr que contém os nomes dos municípios
+                        featureidkey="properties.name", # Propriedade no GeoJSON que corresponde aos nomes dos municípios
+                        color='Valor', # Coluna no df_cdr para colorir o mapa (assumindo quantidade de pacientes ou métrica)
+                        color_continuous_scale="Viridis", # Escala de cores
+                        scope="south america", # Define o escopo do mapa (pode ser "brazil" se tiver um GeoJSON do Brasil)
+                        title="Distribuição de Valores por Município (CDR)",
+                        hover_name="Município",
+                        hover_data={"Valor": True}
+                    )
+                    
+                    fig_map.update_geos(fitbounds="locations", visible=False) # Ajusta o zoom para os municípios presentes
+                    fig_map.update_layout(margin={"r":0,"t":0,"l":0,"b":0}) # Remove margens
+
+                    st.plotly_chart(fig_map, use_container_width=True)
                 else:
-                    # Tenta criar a tabela se não existir
-                    with engine.connect() as connection:
-                        connection.execute(text("""
-                            CREATE TABLE IF NOT EXISTS contratos (
-                                Especialidade TEXT,
-                                Servico TEXT,
-                                "Centro de Custo" INTEGER,
-                                "Nome do Centro de Custo" TEXT,
-                                "Valor Unitario" REAL,
-                                "Data Contrato" DATE,
-                                Contratado TEXT,
-                                "Meta Mensal" TEXT,
-                                Responsavel TEXT,
-                                Detalhamento TEXT
-                            )
-                        """))
-                        connection.commit()
+                    st.warning("Não foi possível carregar o GeoJSON, o mapa não será exibido.")
 
-                    # Gravar no banco de dados
-                    df_contratos.to_sql('contratos', con=engine, if_exists='append', index=False)
-                    st.success("✅ Dados dos contratos inseridos com sucesso!")
-                    st.subheader("📄 Visualização dos Dados Inseridos")
-                    st.dataframe(df_contratos)
+        except Exception as e:
+            st.error(f"❌ Erro ao carregar ou exibir o mapa de CDR: {e}")
+            st.info("Certifique-se de que o arquivo CSV de CDR contém a coluna 'Município' e que os nomes dos municípios correspondem aos dados do GeoJSON.")
+            st.info("Para um mapa coroplético funcional, você precisará de um arquivo GeoJSON com as geometrias dos municípios brasileiros. Um exemplo pode ser encontrado buscando por 'geojson municípios Brasil'.")
 
-            except Exception as e:
-                st.error(f"❌ Erro ao processar o arquivo de contratos: {e}")

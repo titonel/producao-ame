@@ -1,5 +1,4 @@
 __pycache__/
 *.pyc
-producao.db
 .env
 .DS_Store
